@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Ubicación en Tiempo Real</title>
+  <style>
+    body { font-family: Arial; text-align: center; background: #f0f0f0; padding: 20px; }
+    .card { background: white; padding: 20px; margin: auto; max-width: 400px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+    #map { height: 300px; width: 100%; margin-top: 15px; border-radius: 10px; }
+  </style>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+</head>
+<body>
+  <div class="card">
+    <h2>📍 Ubicación GPS en Tiempo Real</h2>
+    <p><b>Latitud:</b> <span id="lat">Cargando...</span></p>
+    <p><b>Longitud:</b> <span id="lon">Cargando...</span></p>
+    <p><b>Hora:</b> <span id="time">Cargando...</span></p>
+    <div id="map"></div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDG2aoVzFYzdAKRVbm2l-LXtPQrpWcesDc",
+      authDomain: "navisight-location.firebaseapp.com",
+      databaseURL: "https://navisight-location-default-rtdb.firebaseio.com",
+      projectId: "navisight-location",
+      storageBucket: "navisight-location.appspot.com",
+      messagingSenderId: "247287641440",
+      appId: "1:247287641440:web:3c87c0459d591a677dda05",
+      measurementId: "G-B4QWNXHSMG"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const latRef = ref(db, "ubicacion/latitud");
+    const lonRef = ref(db, "ubicacion/longitud");
+    const timeRef = ref(db, "ubicacion/hora");
+
+    let map, marker;
+
+    onValue(latRef, (snapshot) => {
+      const lat = snapshot.val();
+      document.getElementById("lat").textContent = lat;
+      updateMap();
+    });
+
+    onValue(lonRef, (snapshot) => {
+      const lon = snapshot.val();
+      document.getElementById("lon").textContent = lon;
+      updateMap();
+    });
+
+    onValue(timeRef, (snapshot) => {
+      const time = snapshot.val();
+      document.getElementById("time").textContent = time;
+    });
+
+    function updateMap() {
+      const lat = parseFloat(document.getElementById("lat").textContent);
+      const lon = parseFloat(document.getElementById("lon").textContent);
+      if (!isNaN(lat) && !isNaN(lon)) {
+        if (!map) {
+          map = L.map('map').setView([lat, lon], 15);
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap'
+          }).addTo(map);
+          marker = L.marker([lat, lon]).addTo(map);
+        } else {
+          marker.setLatLng([lat, lon]);
+          map.panTo([lat, lon]);
+        }
+      }
+    }
+  </script>
+</body>
+</html>
